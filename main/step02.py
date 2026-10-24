@@ -154,46 +154,53 @@ def rmloc(font):
 		for i in loclks: rmlk(font, posub, i)
 
 def mkcmp(option, font, k):
-	cmap=font.getBestCmap()
-	pgl=set()
-	if 'sc'==k:
-		pgl={cmap[ord(ch)] for ch in p_zhs if ord(ch) in cmap}
-		dfltloc='ZHS'
-	elif k in ('tc', 'nm'):
-		pgl={cmap[ord(ch)] for ch in p_zht if ch not in '’‘”“' and ord(ch) in cmap}
-		dfltloc='ZHT'
-	elif 'jp'==k:
-		dfltloc='JAN'
-	if 'jp'!=k:
-		rplg=dict()
-		for tb in option.loczh[dfltloc]:
-			for glin in pgl:
-				if glin not in rplg and glin in tb:
-					rplg[glin]=tb[glin]
-		glyrepl(font, rplg)
-	dfltvt(font, dfltloc)
-	#if k=='SC' or k=='':
-	if k!='jp':
-		repsp=dict()
-		simpg={cmap[ord(ch)] for ch in simpch if ord(ch) in cmap}
-		for gc in simpg:
-			repsp[gc]=glfrloc(gc, option.loczh['ZHS'])
-		glyrepl(font, repsp)
-	if k=='nm':
-		logging.info('Merging multi-code Chinese characters.')
-		with open(os.path.join(SCRIPT_DIR, 'configs/mulcodechar.dt'), 'r', encoding='utf-8') as f:
-			for line in f.readlines():
-				litm=line.split('#')[0].strip()
-				if '-' not in litm: continue
-				s, t=litm.split(' ')[0].split('-')
-				s, t=s.strip(), t.strip()
-				if s and t and s!=t and ord(t) in cmap:
-					logging.info('Processing '+s+'-'+t)
-					setcg(font['cmap'], ord(s), cmap[ord(t)])
-	for table in font['cmap'].tables:
-		if table.format==6:
-			if k in ('tc', 'nm'): table.platEncID=2
-			elif 'sc'==k: table.platEncID=25
+    cmap = font.getBestCmap()
+    pgl = set()
+    dfltloc = 'JAN'
+
+    if 'sc' == k:
+        pgl = {cmap[ord(ch)] for ch in p_zhs if ord(ch) in cmap}
+    elif k in ('tc', 'nm'):
+        pgl = {cmap[ord(ch)] for ch in p_zht if ch not in '’‘”“' and ord(ch) in cmap}
+    elif 'jp' == k:
+        pgl = set()
+
+    if 'jp' != k:
+        rplg = dict()
+        for tb in option.loczh[dfltloc]:
+            for glin in pgl:
+                if glin not in rplg and glin in tb:
+                    rplg[glin] = tb[glin]
+        glyrepl(font, rplg)
+
+    dfltvt(font, dfltloc)
+
+    if k != 'jp':
+        repsp = dict()
+        simpg = {cmap[ord(ch)] for ch in simpch if ord(ch) in cmap}
+        for gc in simpg:
+            repsp[gc] = glfrloc(gc, option.loczh['ZHS'])
+        glyrepl(font, repsp)
+
+    if k == 'nm':
+        logging.info('Merging multi-code Chinese characters.')
+        with open(os.path.join(SCRIPT_DIR, 'configs/mulcodechar.dt'), 'r', encoding='utf-8') as f:
+            for line in f.readlines():
+                litm = line.split('#')[0].strip()
+                if '-' not in litm:
+                    continue
+                s, t = litm.split(' ')[0].split('-')
+                s, t = s.strip(), t.strip()
+                if s and t and s != t and ord(t) in cmap:
+                    logging.info('Processing ' + s + '-' + t)
+                    setcg(font['cmap'], ord(s), cmap[ord(t)])
+
+    for table in font['cmap'].tables:
+        if table.format == 6:
+            if k in ('tc', 'nm'):
+                table.platEncID = 2
+            elif 'sc' == k:
+                table.platEncID = 25
 
 def dfltvt(font, lng):
 	for posub in ('GSUB', 'GPOS'):
@@ -486,7 +493,7 @@ def main(infile, outdir):
 		option.oldps=font['name'].getDebugName(6)
 		option.isvf='fvar' in font
 		logging.info('Getting the localized lookups table.')
-		for ltg in ('ZHS', 'ZHT'):
+		for ltg in ('ZHS', 'ZHT', 'JAN'):
 			option.loczh[ltg]=getloclk(font, ltg)
 	notmono='Mono' not in option.oldps
 	varks=['nm', 'tc', 'sc', 'jp']
